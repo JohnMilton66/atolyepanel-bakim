@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}Giriş{% endblock %}
+{% block login_content %}
+<div class="login-wrap">
+  <div class="login-art"><div class="login-art-inner"><div class="brand light"><span class="brand-mark">✦</span><span>ATÖLYE<span class="brand-strong">PANEL</span><small>BAKIM KARTI TAKİP</small></span></div><div class="art-label">OPERASYON YÖNETİMİ</div><h1>Her kart.<br>Her güncelleme.<br><em>Tek ekranda.</em></h1><p>Planlanan gelişlerden atölyedeki son duruma kadar tüm bakım kartlarının izlenebildiği ortak çalışma alanı.</p><div class="fake-row"><span class="live-dot"></span> Anlık durum görünürlüğü</div></div></div>
+  <div class="login-form-side"><div class="login-panel"><div class="login-hello">HOŞ GELDİNİZ</div><h2>Hesabına giriş yap</h2><p>Yöneticinin sana verdiği kullanıcı adı ve şifreyi yaz.</p><form action="/login" method="post" class="stack-form"><input type="hidden" name="csrf" value="{{ csrf }}"><label>Kullanıcı adı<input name="username" type="text" autocomplete="username" required autofocus placeholder="kullanici.adi" maxlength="50"></label><label>Şifre<input name="password" type="password" autocomplete="current-password" required placeholder="••••••••••"></label><button class="btn primary full big-action" type="submit">Giriş Yap →</button></form><div class="login-help">Hesabınız yoksa atölye yöneticinize başvurun.</div></div></div>
+</div>
+{% endblock %}

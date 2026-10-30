@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}Uçaklar{% endblock %}
+{% block breadcrumb %}Uçak yönetimi{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">YÖNETİCİ İŞLEMLERİ</div><h1>Uçak kayıtları</h1><p>Bakım kartlarını ilişkilendirmek için uçakları tanımlayın.</p></div></div>
+<div class="manage-grid"><div class="data-panel"><h2>Yeni uçak ekle</h2><form action="/aircraft" method="post" class="stack-form"><input type="hidden" name="csrf" value="{{ csrf }}"><label>Uçak tescil / tanıtıcı kodu<input name="registration" required maxlength="30" placeholder="Örn. TC-XXX"></label><label>Uçak tipi / modeli<input name="aircraft_model" maxlength="100" placeholder="Örn. A320"></label><button type="submit" class="btn primary full">Uçak ekle →</button></form></div><div class="data-panel"><h2>Tanımlı uçaklar <span class="count-label">{{ airplanes|length }}</span></h2><div class="item-list">{% for a in airplanes %}<div class="manage-item"><span class="item-symbol">✈</span><div><strong>{{ a.registration }}</strong><small>{{ a.aircraft_model or 'Model girilmedi' }}</small></div><span class="item-count">{{ a.card_count }} kart</span></div>{% else %}<div class="empty-state"><p>Henüz uçak eklenmemiş.</p></div>{% endfor %}</div></div></div>
+{% endblock %}

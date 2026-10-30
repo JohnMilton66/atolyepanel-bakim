@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Görevlerim' if is_my_tasks else 'Kart takip panosu' }}{% endblock %}
+{% block breadcrumb %}{{ 'Görevlerim' if is_my_tasks else 'Kart takibi' }}{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">ATÖLYE OPERASYONLARI</div><h1>{{ 'Bana Atanan Kartlar' if is_my_tasks else 'Bakım Kartı Takip Panosu' }}</h1><p>{{ 'Üstlendiğiniz kartlar, iş durumları ve vardiya devri için kişisel listeniz.' if is_my_tasks else 'Uçak bazlı kart hareketlerini, sorumluları ve iş durumlarını tek yerden takip edin.' }}</p></div><div class="heading-actions">{% if user.role == 'admin' %}<a class="btn secondary" href="/export.csv">↓ CSV dışa aktar</a><a class="btn primary" href="/cards/new">＋ Yeni kart ekle</a>{% else %}<a class="btn secondary" href="{{ '/dashboard?assignee=unassigned' if is_my_tasks else '/my-tasks' }}">{{ 'Boştaki işleri gör' if is_my_tasks else '☷ Görevlerim' }}</a>{% endif %}</div></div>
+<div class="stats-grid"><div class="stat-card"><div class="stat-top"><span>TOPLAM KART</span><span class="stat-icon blue">▦</span></div><div class="stat-value">{{ stats.total }}</div><div class="stat-sub">Tüm kayıtlardaki kartlar</div></div><div class="stat-card"><div class="stat-top"><span>BUGÜN BEKLENEN</span><span class="stat-icon cyan">◷</span></div><div class="stat-value">{{ stats.today }}</div><div class="stat-sub">Henüz gelmeyen kartlar</div></div><div class="stat-card"><div class="stat-top"><span>GECİKEN</span><span class="stat-icon coral">!</span></div><div class="stat-value">{{ stats.overdue }}</div><div class="stat-sub">Plan günü geçmiş kartlar</div></div><div class="stat-card"><div class="stat-top"><span>SAHİPSİZ / AÇIK</span><span class="stat-icon green">♙</span></div><div class="stat-value">{{ stats.unassigned_open }}</div><div class="stat-sub">Henüz sorumlu atanmadı</div></div></div>
+<div class="operations-strip"><div><strong>Atölye durumu</strong><span>{{ stats.in_progress }} işlemde · {{ stats.on_hold }} beklemede · {{ stats.completed }} tamamlandı · {{ stats.received_today }} bugün geldi</span></div><div>{% if user.role == 'technician' %}<span class="personal-count">{{ stats.mine_open }} aktif görevim</span>{% endif %}<a href="/assignments" class="btn secondary">Görev ve devir özeti →</a></div></div>
+<!-- V4 shared monthly calendar, server rendered for both admin and technician -->
+<section class="calendar-panel" aria-label="Planlanan bakım kartları takvimi">
+  <div class="calendar-head">
+    <div>
+      <div class="eyebrow">PLANLANAN GELİŞ TAKVİMİ</div>
+      <h2>📅 Hangi gün hangi kart gelecek?</h2>
+      <p>Bir güne dokun. O gün gelmesi planlanan kartları hemen gör.</p>
+    </div>
+    <div class="calendar-nav">
+      <a class="cal-arrow" href="{{ cal.prev_url }}" aria-label="Önceki ay">‹</a>
+      <strong>{{ cal.month_label }}</strong>
+      <a class="cal-arrow" href="{{ cal.next_url }}" aria-label="Sonraki ay">›</a>
+      <a class="btn secondary cal-today" href="{{ cal.today_url }}">Bugün</a>
+    </div>
+  </div>
+  <div class="location-row" aria-label="Bakım lokasyonu filtresi">
+    <a href="{{ request.url.path }}?month={{ cal.month_value }}&day={{ cal.selected_day }}" class="location-pill {{ 'selected' if not location else '' }}">🌍 Tümü</a>
+    {% for loc in LOCATIONS %}
+    <a class="location-pill {{ 'selected' if location == loc else '' }}" href="{{ request.url.path }}?month={{ cal.month_value }}&day={{ cal.selected_day }}&location={{ loc }}">📍 {{ loc }}</a>
+    {% endfor %}
+  </div>
+  <div class="calendar-weekdays" aria-hidden="true">
+    {% for wd in cal.weekdays %}<span>{{ wd }}</span>{% endfor %}
+  </div>
+  <div class="calendar-grid">
+    {% for week in cal.weeks %}{% for d in week %}
+    <a href="{{ d.url }}" class="calendar-day {{ 'outside' if not d.in_month else '' }} {{ 'selected' if d.selected else '' }} {{ 'is-today' if d.today else '' }}" aria-label="{{ d.date }}: {{ d.count }} planlı kart" {{ 'aria-current="date"' if d.today else '' }}>
+      <span class="calendar-day-number">{{ d.day }}</span>
+      {% if d.count %}<span class="calendar-count">{{ d.count }} kart</span><span class="cal-code-list">{% for code in d.samples %}<span>{{ code }}</span>{% endfor %}</span>{% endif %}
+    </a>
+    {% endfor %}{% endfor %}
+  </div>
+  <div class="calendar-day-summary">
+    <div class="calendar-summary-title"><div><div class="eyebrow">SEÇİLEN GÜN</div><h3>{{ cal.selected_day_label }} <span class="count-label">{{ cal.day_cards|length }} kart</span></h3><p>{{ location if location else 'Tüm lokasyonlar' }} · Planlanan geliş tarihi</p></div>
+      {% if user.role == 'admin' %}<a class="btn primary" href="/cards/new?date={{ cal.selected_day }}&location={{ location }}">+ Bu güne kart ekle</a>{% endif %}
+    </div>
+    {% if cal.day_cards %}
+    <div class="daily-card-list">
+    {% for item in cal.day_cards %}
+      <a class="daily-card" href="/cards/{{ item.id }}">
+        <div class="daily-time">{{ item.planned_time or 'Saat yok' }}</div>
+        <div class="daily-card-info"><strong>✈ {{ item.registration }} · {{ item.card_code }}</strong><span>{{ item.title }}</span></div>
+        <span class="daily-location">{{ item.workshop or 'Eski konum' }}</span>
+        <span class="status {{ item.status }}">{{ item.status_name }}</span>
+        <span class="daily-open" aria-hidden="true">›</span>
+      </a>
+    {% endfor %}
+    </div>
+    {% else %}
+    <div class="calendar-empty">✓ Bu gün için planlanmış bakım kartı yok.</div>
+    {% endif %}
+  </div>
+</section>
+
+<div class="section-header"><div><h2>{{ 'Görevlerim' if is_my_tasks else 'Bakım kartları' }} <span class="count-label">{{ cards|length }}</span></h2><p>Son durum, sorumlu teknisyen ve güncellenen bilgileri inceleyin.</p></div></div>
+<form method="get" action="{{ '/my-tasks' if is_my_tasks else '/dashboard' }}" class="filter-row"><input type="hidden" name="location" value="{{ location }}"><label class="search-field"><span>⌕</span><input name="q" value="{{ q }}" placeholder="Uçak, kart kodu, not ara..."></label><select name="aircraft"><option value="">Tüm uçaklar</option>{% for a in airplanes %}<option value="{{ a.id }}" {{ 'selected' if selected_aircraft == a.id|string else '' }}>{{ a.registration }}</option>{% endfor %}</select><select name="status"><option value="">Tüm durumlar</option><option value="overdue" {{ 'selected' if selected_status == 'overdue' else '' }}>Gecikenler</option>{% for s,name in STATUS.items() %}<option value="{{ s }}" {{ 'selected' if selected_status == s else '' }}>{{ name }}</option>{% endfor %}</select>{% if not is_my_tasks %}<select name="assignee"><option value="">Tüm sorumlular</option><option value="me" {{ 'selected' if selected_assignee == 'me' else '' }}>Bana atananlar</option><option value="unassigned" {{ 'selected' if selected_assignee == 'unassigned' else '' }}>Atanmamışlar</option>{% for t in technicians %}<option value="{{ t.id }}" {{ 'selected' if selected_assignee == t.id|string else '' }}>{{ t.full_name }}{{ ' (pasif)' if not t.active else '' }}</option>{% endfor %}</select>{% endif %}<button class="btn secondary" type="submit">Filtrele</button><a class="reset-link" href="{{ '/my-tasks' if is_my_tasks else '/dashboard' }}">Sıfırla</a></form>
+<div class="mobile-scroll-hint">← Tabloyu sağa kaydırarak sorumlu, durum ve son bilgileri görebilirsiniz →</div><div class="table-panel"><div class="table-scroll"><table><thead><tr><th>UÇAK / KART</th><th>PLANLANAN GELİŞ / LOKASYON</th><th>GERÇEK GELİŞ</th><th>BİTİŞ</th><th>SORUMLU</th><th>DURUM</th><th>SON BİLGİ</th><th></th></tr></thead><tbody>
+{% for c in cards %}<tr><td><div class="aircraft-name">✈ &nbsp;{{ c.registration }}</div><div class="card-code">{{ c.card_code }}</div><div class="card-title">{{ c.title }}</div></td><td><strong class="table-date">{{ c.planned_date[8:10] }}.{{ c.planned_date[5:7] }}.{{ c.planned_date[:4] }}</strong><div class="muted">{{ c.planned_time or 'Saat belirtilmedi' }} · {{ c.workshop or 'Konum yok' }}</div>{% if c.overdue %}<span class="tiny-warning">Gecikti</span>{% endif %}</td><td>{% if c.actual_received_at %}<strong class="table-date">{{ c.actual_received_at[:16] }}</strong>{% else %}<span class="muted">—</span>{% endif %}</td><td><span class="table-date">{{ c.actual_completed_at[:16] if c.actual_completed_at else '—' }}</span></td><td>{% if c.assignee_name %}<div class="owner-tag">{{ c.assignee_name }}</div>{% if not c.assignee_active %}<span class="tiny-warning">Hesap pasif</span>{% endif %}{% else %}<span class="unassigned-tag">Atanmamış</span>{% endif %}</td><td><span class="status {{ c.status }}">{{ c.status_name }}</span></td><td><div class="note-preview">{{ c.latest_note or 'Henüz açıklama girilmedi.' }}</div>{% if c.latest_note %}<div class="muted small">{{ c.last_note_by_name or 'İlgili kullanıcı' }} · {{ (c.latest_note_at or c.updated_at)[:16] }}</div>{% endif %}</td><td><a href="/cards/{{ c.id }}" class="view-link" aria-label="Kartı aç">→</a></td></tr>{% else %}<tr><td colspan="8"><div class="empty-state"><div class="empty-symbol">▤</div><strong>Bu filtrede kart bulunamadı</strong><p>Filtreleri değiştirin veya boştaki kartları inceleyin.</p></div></td></tr>{% endfor %}
+</tbody></table></div></div>
+<div class="below-tip"><span>i</span> Gecikme yalnızca kartın atölyeye gelişi açısından hesaplanır. Bu uygulama resmî bakım onay sistemi değildir.</div>
+{% endblock %}

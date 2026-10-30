@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Bakım Kartı Takip{% endblock %} · AtölyePanel</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body class="{{ 'is-login' if not user else 'is-app' }}">
+{% if user %}
+<div class="app-shell">
+  <aside class="sidebar">
+    <a href="/dashboard" class="brand"><span class="brand-mark">✈</span><span>THY <span class="brand-strong">BAKIM</span><small>KART TAKİP PANELİ</small></span></a>
+    <div class="nav-title">ÇALIŞMA ALANI</div>
+    <nav class="side-nav">
+      <a href="/dashboard" class="{{ 'active' if request.url.path == '/dashboard' or request.url.path.startswith('/cards') else '' }}" title="Takvim ve kartlar"><span class="nav-icon">▦</span> Takvim ve kartlar</a>
+      {% if user.role == 'technician' %}<a href="/my-tasks" class="{{ 'active' if request.url.path == '/my-tasks' else '' }}" title="Görevlerim"><span class="nav-icon">☷</span> Görevlerim</a>{% endif %}
+      <a href="/assignments" class="{{ 'active' if request.url.path == '/assignments' else '' }}" title="Görev dağılımı"><span class="nav-icon">⇄</span> Görev dağılımı</a>
+      {% if user.role == 'admin' %}
+      <a href="/cards/new" title="Yeni kart"><span class="nav-icon">＋</span> Yeni kart</a>
+      <a href="/aircraft" title="Uçaklar" class="{{ 'active' if request.url.path == '/aircraft' else '' }}"><span class="nav-icon">✈</span> Uçaklar</a>
+      <a href="/users" title="Teknisyen hesapları" class="{{ 'active' if request.url.path == '/users' else '' }}"><span class="nav-icon">♙</span> Kullanıcılar</a>
+      {% endif %}
+    </nav>
+    <div class="side-bottom">
+      <div class="side-label">OTURUM</div>
+      <div class="profile"><div class="avatar">{{ user.full_name[0]|upper }}</div><div><strong>{{ user.full_name }}</strong><small>{{ 'Yönetici' if user.role == 'admin' else 'Teknisyen' }}</small></div></div>
+      <form action="/logout" method="post"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="logout" type="submit">↪ &nbsp; Çıkış yap</button></form>
+    </div>
+  </aside>
+  <main class="main-area">
+    <header class="topbar"><div class="mobile-brand">✈ &nbsp;THY BAKIM</div><div class="breadcrumb">OPERASYON MERKEZİ <span> / </span> {% block breadcrumb %}Kart takibi{% endblock %}</div><div class="topbar-right"><span class="live-dot"></span> Türkiye saati <span class="top-date">{{ now_local[:16] }}</span><div class="mini-avatar">{{ user.full_name[0]|upper }}</div></div></header>
+    <div class="content">
+      {% if flash %}<div class="alert {{ flash.category }}">{{ flash.message }} <button type="button" aria-label="Kapat" onclick="this.parentElement.remove()">×</button></div>{% endif %}
+      {% block content %}{% endblock %}
+      <footer>THY temalı bakım takibi prototipi · Kurumsal olarak onaylanmış sistem değildir · <strong>Resmî bakım / sertifikasyon kaydı değildir.</strong></footer>
+    </div>
+  </main>
+</div>
+{% else %}
+  {% if flash %}<div class="login-flash alert {{ flash.category }}">{{ flash.message }}</div>{% endif %}
+  {% block login_content %}{% endblock %}
+{% endif %}
+<script src="/static/app.js"></script>
+</body>
+</html>
